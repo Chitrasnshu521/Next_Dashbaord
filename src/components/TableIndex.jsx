@@ -19,7 +19,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import FadeContent from "./ui/FadeContent";
+import { Badge } from "@/components/ui/badge"; // Ensure you import Badge
+
 
 export function DataTableDemo() {
     const [fullData, setFullData] = useState([]); // Store all records
@@ -30,7 +31,7 @@ export function DataTableDemo() {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`https://jsonplaceholder.typicode.com/photos`)
+        fetch(`/api/users`) // Make sure this endpoint calls your stored procedure
             .then((response) => response.json())
             .then((json) => {
                 setFullData(json);
@@ -48,25 +49,45 @@ export function DataTableDemo() {
         );
     }, [fullData, filterText]);
     
+
     const paginatedData = useMemo(() => {
         const start = (page - 1) * pageSize;
         return filteredData.slice(start, start + pageSize);
     }, [filteredData, page, pageSize]);
-    
+
     const table = useReactTable({
         data: paginatedData,
         columns: [
-            { accessorKey: "id", header: "ID" },
-            { accessorKey: "albumId", header: "Album ID" },
-            { accessorKey: "title", header: "Title" },
-            { accessorKey: "url", header: "Image" },
-            { accessorKey: "thumbnailUrl", header: "Thumbnail" },
+            { accessorKey: "ID", header: "ID" },
+            { accessorKey: "Name", header: "Name" },
+            { accessorKey: "Mobile", header: "Mobile" },
+            { accessorKey: "Salary", header: "Salary" },
+            { accessorKey: "City", header: "City" },
+            {
+                accessorKey: "Sts",
+                header: "Status",
+                cell: ({ row }) => {
+                    const status = String(row.original.Sts || "").toUpperCase(); // Ensure it's a string & uppercase
+            
+                    const statusMap = {
+                        A: { label: "Green", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+                        P: { label: "Yellow", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
+                        I: { label: "Red", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" }, // Assuming 'I' means inactive
+                    };
+            
+                    const { label, className } = statusMap[status] || statusMap["I"]; // Default to "Red" if status is unknown
+            
+                    return <Badge className={`text-xs font-medium px-2.5 py-0.5 rounded-sm ${className}`}>{label}</Badge>;
+                },
+            },
         ],
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         manualPagination: true,
     });
+    
+    
 
     return (
         <div className="w-full">
@@ -79,7 +100,6 @@ export function DataTableDemo() {
                 />
             </div>
             <div className="rounded-md border">
-                <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -106,11 +126,7 @@ export function DataTableDemo() {
                                 <TableRow key={row.id}>
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
-                                            {cell.column.id === "url" || cell.column.id === "thumbnailUrl" ? (
-                                                <img src={cell.getValue()} alt="" className="w-5 h-5" />
-                                            ) : (
-                                                flexRender(cell.column.columnDef.cell, cell.getContext())
-                                            )}
+                                            {cell.getValue() || "N/A"}
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -118,7 +134,6 @@ export function DataTableDemo() {
                         )}
                     </TableBody>
                 </Table>
-                </FadeContent>
             </div>
             <div className="flex justify-end space-x-2 py-4">
                 <Button
@@ -136,7 +151,7 @@ export function DataTableDemo() {
                 >
                     Next
                 </Button>
-            </div>
+            </div>  
         </div>
     );
 }

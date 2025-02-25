@@ -93,3 +93,14 @@ body {
   background-image: linear-gradient(to right, #005b9a , #dd3b76);
 }
 
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+

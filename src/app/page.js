@@ -20,6 +20,7 @@ export default function Home() {
         </Col> 
           <Col md={12}>
           <DataTableDemo />
+          
           </Col>
           {/* <Col md={6}>
           <ChartIndex />

@@ -21,25 +21,32 @@ const IndexCard = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {cardData.map((item, index) => (
-        <FadeContent blur={true} duration={1000} easing="ease-out" initialOpacity={0}>
-        <Card key={index}>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <BlurText text={item.title} className="text-sm" />
-              <CardDescription>{item.icon}</CardDescription>
-            </div>
-            <CardTitle className="text-2xl">
-              <BlurText text={item.amount} animateBy="letters" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BlurText text={item.content} className="text-black-50 text-xs" />
-          </CardContent>
-        </Card>
+        <FadeContent
+          key={index} // Move key here
+          blur={true}
+          duration={1000}
+          easing="ease-out"
+          initialOpacity={0}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <BlurText text={item.title} className="text-sm" />
+                <CardDescription>{item.icon}</CardDescription>
+              </div>
+              <CardTitle className="text-2xl">
+                <BlurText text={item.amount} animateBy="letters" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BlurText text={item.content} className="text-black-50 text-xs" />
+            </CardContent>
+          </Card>
         </FadeContent>
       ))}
     </div>
   );
 };
+
 
 export default IndexCard;
