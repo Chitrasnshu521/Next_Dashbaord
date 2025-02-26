@@ -6,12 +6,28 @@ export async function GET(req) {
   try {
     const pool = await connectToDatabase();
 
-    // Execute the stored procedure to fetch students
-    const result = await pool.request().execute("AD_spGetEmployees");
+    // Extract ID from query parameters
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id"); 
 
-    return Response.json(result.recordset);
+    if (id) {
+      // If ID is provided, fetch the specific employee
+      const result = await pool.request()
+        .input("EmployeeID", sql.Int, id)
+        .execute("AD_spGetEmployeeByID"); // ✅ Make sure this stored procedure exists
+
+      if (!result.recordset.length) {
+        return Response.json({ error: "Employee not found" }, { status: 404 });
+      }
+
+      return Response.json(result.recordset[0]);
+    } else {
+      // Fetch all employees if no ID is provided
+      const result = await pool.request().execute("AD_spGetEmployees");
+      return Response.json(result.recordset);
+    }
   } catch (error) {
-    console.error("Error fetching student data:", error);
+    console.error("Error fetching employee data:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

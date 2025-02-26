@@ -27,6 +27,8 @@ export function DataTableDemo() {
     const [fullData, setFullData] = useState([]); // Store all records
     const [filterText, setFilterText] = useState("");
     const [loading, setLoading] = useState(true);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [page, setPage] = useState(1);
     const pageSize = 10;
 
@@ -64,13 +66,21 @@ export function DataTableDemo() {
         return filteredData.slice(start, start + pageSize);
     }, [filteredData, page, pageSize]);
 
-    const handleEdit = (id) => {
+    const handleEdit = async (id) => {
         if (!id) {
             console.error("Error: Missing ID for edit action!");
             return;
         }
-        console.log("Editing employee with ID:", id);
-        // Open the edit dialog here
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/users/${id}`);
+            const data = await response.json();
+            setSelectedEmployee(data); // Store fetched data
+            setIsDialogOpen(true); // Open the dialog
+        } catch (error) {
+            console.error("Error fetching employee data:", error);
+        }
+        setLoading(false);
     };
 
     const table = useReactTable({
@@ -94,28 +104,25 @@ export function DataTableDemo() {
                 accessorKey: "Sts",
                 header: "Status",
                 cell: ({ row }) => {
-                    const status = String(row.original.Sts || "").toUpperCase();
+                    const status = row.original.Sts ? row.original.Sts.toUpperCase() : "I"; // Default to "I"
                     const statusMap = {
                         A: { label: "Active", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
                         P: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
                         I: { label: "Inactive", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
                     };
                     const { label, className } = statusMap[status] || statusMap["I"];
-                    return <Badge className={`text-xs font-medium px-2.5 py-0.5 rounded-sm ${className}`}>{label}</Badge>;
+                    return <Badge className={`${className} px-2 py-0.5 rounded text-xs`}>{label}</Badge>;
                 },
             },
             {
+                accessorKey: "ID",
                 header: "Actions",
                 cell: ({ row }) => {
-                    console.log("Row Data:", row.original);
-                    const id = row.original.ID;
-                    if (!id) {
-                        console.warn("Missing ID for row:", row.original);
-                        return <span className="text-gray-400">N/A</span>; 
-                    }
+                    const employeeId = row.original.ID;
+                    if (!employeeId) return "N/A";
             
                     return (
-                        <Button size="sm" variant="ghost" onClick={() => handleEdit(id)}>
+                        <Button size="sm" variant="ghost" onClick={() => handleEdit(employeeId)}>
                             <Pencil className="w-4 h-4" />
                         </Button>
                     );
@@ -153,28 +160,33 @@ export function DataTableDemo() {
                         ))}
                     </TableHeader>
                     <TableBody>
-                        {loading ? (
-                            [...Array(pageSize)].map((_, index) => (
-                                <TableRow key={index}>
-                                    {table.getAllColumns().map((col) => (
-                                        <TableCell key={col.id}>
-                                            <Skeleton className="w-[50px] h-[20px]" />
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {cell.getValue() || "N/A"}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
+                       {loading ? (
+                           [...Array(pageSize)].map((_, index) => (
+                               <TableRow key={index}>
+                                   {table.getAllColumns().map((col) => (
+                                       <TableCell key={col.id}>
+                                           <Skeleton className="w-[50px] h-[20px]" />
+                                       </TableCell>
+                                   ))}
+                               </TableRow>
+                           ))
+                       ) : paginatedData.length > 0 ? (
+                           table.getRowModel().rows.map((row) => (
+                               <TableRow key={row.id}>
+                                   {row.getAllCells().map((cell) => (
+                                       <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                   ))}
+                               </TableRow>
+                           ))
+                       ) : (
+                    <TableRow>
+            <TableCell colSpan={table.getAllColumns().length} className="text-center">
+                No data found
+            </TableCell>
+        </TableRow>
+    )}
+</TableBody>
+
                 </Table>
             </div>
             <div className="flex justify-end space-x-2 py-4">
