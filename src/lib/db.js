@@ -9,10 +9,13 @@ const config = {
     encrypt: true, // Required for Azure
     trustServerCertificate: true, // Needed for self-signed certificates
   },
+  
 };
-
+console.log("DB_SERVER:", process.env.DB_SERVER);
+    console.log("DB_USER:", process.env.DB_USER);
+    console.log("DB_NAME:", process.env.DB_NAME);
 // Global connection pool to prevent multiple reconnections in serverless environments
-let poolPromise;
+//let poolPromise;
 
 export const connectToDatabase = async () => {
   try {

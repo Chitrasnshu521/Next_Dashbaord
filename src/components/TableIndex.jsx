@@ -42,12 +42,17 @@ export function DataTableDemo() {
 
     // Memoized local pagination
     const filteredData = useMemo(() => {
+        if (!Array.isArray(fullData)) {
+            console.warn("fullData is not an array:", fullData);
+            return []; // Default to an empty array
+        }
         return fullData.filter((item) =>
             Object.values(item).some((value) =>
                 value?.toString().toLowerCase().includes(filterText.toLowerCase())
             )
         );
     }, [fullData, filterText]);
+    
     
 
     const paginatedData = useMemo(() => {
