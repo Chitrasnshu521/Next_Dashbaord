@@ -1,64 +1,52 @@
 import { connectToDatabase } from "@/lib/db";
+import sql from "mssql"; // ✅ Ensure this is imported correctly
 
-// export async function GET(req) {
-//   try {
-//     const pool = await connectToDatabase();
-//     const result = await pool.request().query("SELECT * FROM admin_Ckuser");
-
-//     return Response.json(result.recordset);
-//   } catch (error) {
-//     console.error("Error fetching users:", error);
-//     return Response.json({ error: "Internal Server Error" }, { status: 500 });
-//   }
-// }
 
 export async function GET(req) {
-    try {
-      const pool = await connectToDatabase();
-      
-      // Execute the stored procedure
-      const result = await pool
-        .request()
-        .execute("AD_spGetStudentData"); // Call the stored procedure
-  
-      return Response.json(result.recordset);
-    } catch (error) {
-      console.error("Error fetching data from stored procedure:", error);
-      return Response.json({ error: "Internal Server Error" }, { status: 500 });
-    }
+  try {
+    const pool = await connectToDatabase();
+
+    // Execute the stored procedure to fetch students
+    const result = await pool.request().execute("AD_spGetEmployees");
+
+    return Response.json(result.recordset);
+  } catch (error) {
+    console.error("Error fetching student data:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
 
-// export default async function handler(req, res) {
-//   try {
-//     const pool = await connectToDatabase();
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { name, mobile, salary, city } = body;
 
-//     if (req.method === "GET") {
-//       const result = await pool.request().execute("AD_spGetEmpList");
-//       return res.status(200).json(result.recordset);
-//     }
+    if (!name || !mobile || !salary || !city) {
+      return Response.json({ error: "Missing required fields" }, { status: 400 });
+    }
 
-//     if (req.method === "POST") {
-//       const { Name, Mobile, Salary, City, Sts } = req.body;
+    const pool = await connectToDatabase();
 
-//       if (!Name || !Mobile || !Salary || !City || !Sts) {
-//         return res.status(400).json({ error: "Missing required fields" });
-//       }
+    const result = await pool
+      .request()
+      .input("Name", sql.NVarChar, name) // ✅ Corrected: Remove size from `sql.NVarChar`
+      .input("Mobile", sql.NVarChar, mobile)
+      .input("Salary", sql.NVarChar, salary)
+      .input("City", sql.NVarChar, city)
+      .execute("AD_spInsertEmployee");
 
-//       const result = await pool
-//         .request()
-//         .input("Name", Name)
-//         .input("Mobile", Mobile)
-//         .input("Salary", Salary)
-//         .input("City", City)
-//         .input("Sts", Sts)
-//         .execute("AD_spCreateEmp");
+    console.log("SQL Result:", result.recordset); // ✅ Log result
 
-//       return res.status(201).json({ message: "Employee created successfully", result: result.recordset });
-//     }
+    if (result.recordset && result.recordset[0].ErrorMessage) {
+      return Response.json({ error: result.recordset[0].ErrorMessage }, { status: 500 });
+    }
 
-//     return res.status(405).json({ error: "Method Not Allowed" }); // For unsupported methods
-//   } catch (error) {
-//     console.error("Error handling request:", error);
-//     return res.status(500).json({ error: "Internal Server Error" });
-//   }
-// }
+    return Response.json({
+      message: "Employee added successfully",
+      employeeId: result.recordset[0].EmployeeID,
+    });
+  } catch (error) {
+    console.error("Error inserting employee:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -6,6 +6,8 @@ import Image from "next/image";
 import { Col, Row } from "react-bootstrap";
 import { Separator } from "@/components/ui/separator"
 import BlurText from "@/components/BlurText";
+import EmployeeDialog from "@/components/EmployeeDialog";
+import { Toaster } from "react-hot-toast";
 
 
 export default function Home() {
@@ -19,6 +21,8 @@ export default function Home() {
         <IndexCard />
         </Col> 
           <Col md={12}>
+          <Toaster position="top-right" />
+     
           <DataTableDemo />
           
           </Col>

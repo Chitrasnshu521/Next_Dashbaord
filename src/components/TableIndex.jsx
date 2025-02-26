@@ -19,8 +19,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge"; // Ensure you import Badge
-
+import { Badge } from "@/components/ui/badge";
+import { Pencil } from "lucide-react"; // Import the edit icon
+import EmployeeDialog from "./EmployeeDialog";
 
 export function DataTableDemo() {
     const [fullData, setFullData] = useState([]); // Store all records
@@ -31,20 +32,24 @@ export function DataTableDemo() {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/users`) // Make sure this endpoint calls your stored procedure
+        fetch(`/api/users`)
             .then((response) => response.json())
             .then((json) => {
+               // console.log("Fetched Data:", json); // ✅ Check if ID exists
                 setFullData(json);
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((error) => {
+                console.error("Error fetching data:", error);
+                setLoading(false);
+            });
     }, []);
 
-    // Memoized local pagination
+    // Filtered Data for Searching
     const filteredData = useMemo(() => {
         if (!Array.isArray(fullData)) {
             console.warn("fullData is not an array:", fullData);
-            return []; // Default to an empty array
+            return [];
         }
         return fullData.filter((item) =>
             Object.values(item).some((value) =>
@@ -52,18 +57,35 @@ export function DataTableDemo() {
             )
         );
     }, [fullData, filterText]);
-    
-    
 
+    // Paginate Data
     const paginatedData = useMemo(() => {
         const start = (page - 1) * pageSize;
         return filteredData.slice(start, start + pageSize);
     }, [filteredData, page, pageSize]);
 
+    const handleEdit = (id) => {
+        if (!id) {
+            console.error("Error: Missing ID for edit action!");
+            return;
+        }
+        console.log("Editing employee with ID:", id);
+        // Open the edit dialog here
+    };
+
     const table = useReactTable({
         data: paginatedData,
         columns: [
-            { accessorKey: "ID", header: "ID" },
+            {
+                accessorKey: "rowIndex",
+                header: "ID",
+                cell: ({ row }) => row.index + 1, // Static Row ID
+            },
+            // {
+            //     accessorKey: "ID",
+            //     header: "Actual ID",
+            //     cell: ({ row }) => row.original.ID || "N/A", // Ensure ID is displayed
+            // },
             { accessorKey: "Name", header: "Name" },
             { accessorKey: "Mobile", header: "Mobile" },
             { accessorKey: "Salary", header: "Salary" },
@@ -72,37 +94,50 @@ export function DataTableDemo() {
                 accessorKey: "Sts",
                 header: "Status",
                 cell: ({ row }) => {
-                    const status = String(row.original.Sts || "").toUpperCase(); // Ensure it's a string & uppercase
-            
+                    const status = String(row.original.Sts || "").toUpperCase();
                     const statusMap = {
-                        A: { label: "Green", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
-                        P: { label: "Yellow", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
-                        I: { label: "Red", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" }, // Assuming 'I' means inactive
+                        A: { label: "Active", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+                        P: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
+                        I: { label: "Inactive", className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
                     };
-            
-                    const { label, className } = statusMap[status] || statusMap["I"]; // Default to "Red" if status is unknown
-            
+                    const { label, className } = statusMap[status] || statusMap["I"];
                     return <Badge className={`text-xs font-medium px-2.5 py-0.5 rounded-sm ${className}`}>{label}</Badge>;
                 },
             },
+            {
+                header: "Actions",
+                cell: ({ row }) => {
+                    console.log("Row Data:", row.original);
+                    const id = row.original.ID;
+                    if (!id) {
+                        console.warn("Missing ID for row:", row.original);
+                        return <span className="text-gray-400">N/A</span>; 
+                    }
+            
+                    return (
+                        <Button size="sm" variant="ghost" onClick={() => handleEdit(id)}>
+                            <Pencil className="w-4 h-4" />
+                        </Button>
+                    );
+                },
+            }            
         ],
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         manualPagination: true,
     });
-    
-    
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
+            <div className="flex items-center py-4 justify-between">
                 <Input
                     placeholder="Filter data..."
                     className="max-w-sm"
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                 />
+                <EmployeeDialog />
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -122,7 +157,9 @@ export function DataTableDemo() {
                             [...Array(pageSize)].map((_, index) => (
                                 <TableRow key={index}>
                                     {table.getAllColumns().map((col) => (
-                                        <TableCell key={col.id}><Skeleton className="w-[50px] h-[20px]" /></TableCell>
+                                        <TableCell key={col.id}>
+                                            <Skeleton className="w-[50px] h-[20px]" />
+                                        </TableCell>
                                     ))}
                                 </TableRow>
                             ))
@@ -156,7 +193,7 @@ export function DataTableDemo() {
                 >
                     Next
                 </Button>
-            </div>  
+            </div>
         </div>
     );
 }
