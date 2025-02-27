@@ -66,22 +66,22 @@ export function DataTableDemo() {
         return filteredData.slice(start, start + pageSize);
     }, [filteredData, page, pageSize]);
 
-    const handleEdit = async (id) => {
-        if (!id) {
-            console.error("Error: Missing ID for edit action!");
-            return;
+    const handleEdit = async (employeeId) => {
+        if (!employeeId) {
+          console.error("Error: Missing ID for edit action!");
+          return;
         }
         setLoading(true);
         try {
-            const response = await fetch(`/api/users/${id}`);
-            const data = await response.json();
-            setSelectedEmployee(data); // Store fetched data
-            setIsDialogOpen(true); // Open the dialog
+          const response = await fetch(`/api/users?id=${employeeId}`);
+          const data = await response.json();
+          setSelectedEmployee(data); // Store fetched data
+          setIsDialogOpen(true); // Open the dialog
         } catch (error) {
-            console.error("Error fetching employee data:", error);
+          console.error("Error fetching employee data:", error);
         }
         setLoading(false);
-    };
+      };
 
     const table = useReactTable({
         data: paginatedData,
@@ -122,9 +122,23 @@ export function DataTableDemo() {
                     if (!employeeId) return "N/A";
             
                     return (
-                        <Button size="sm" variant="ghost" onClick={() => handleEdit(employeeId)}>
-                            <Pencil className="w-4 h-4" />
-                        </Button>
+                        <EmployeeDialog
+  selectedEmployee={selectedEmployee}
+  onSuccess={() => {
+    setSelectedEmployee(null); // Reset selected employee after success
+    setIsDialogOpen(false); // Close the dialog
+    // Optionally, refetch data here to update the table
+  }}
+  isOpen={isDialogOpen}
+  onOpenChange={setIsDialogOpen}
+/>
+                    //     <EmployeeDialog 
+                    //     selectedEmployee={selectedEmployee} 
+                    //     onSuccess={() => {
+                    //       setSelectedEmployee(null);
+                    //       // Optionally, refetch data here if needed
+                    //     }} 
+                    //   />
                     );
                 },
             }            

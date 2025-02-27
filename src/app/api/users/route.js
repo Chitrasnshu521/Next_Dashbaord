@@ -11,10 +11,10 @@ export async function GET(req) {
     const id = searchParams.get("id"); 
 
     if (id) {
-      // If ID is provided, fetch the specific employee
+      // Fetch the specific employee by ID
       const result = await pool.request()
         .input("EmployeeID", sql.Int, id)
-        .execute("AD_spGetEmployeeByID"); // ✅ Make sure this stored procedure exists
+        .execute("AD_spGetEmployeeByID"); // Ensure this stored procedure exists
 
       if (!result.recordset.length) {
         return Response.json({ error: "Employee not found" }, { status: 404 });
@@ -31,6 +31,40 @@ export async function GET(req) {
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+    const { id, name, mobile, salary, city } = body;
+
+    if (!id || !name || !mobile || !salary || !city) {
+      return Response.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const pool = await connectToDatabase();
+
+    const result = await pool
+      .request()
+      .input("EmployeeID", sql.Int, id)
+      .input("Name", sql.NVarChar, name)
+      .input("Mobile", sql.NVarChar, mobile)
+      .input("Salary", sql.NVarChar, salary)
+      .input("City", sql.NVarChar, city)
+      .execute("AD_spUpdateEmployee"); // Ensure this stored procedure exists
+
+    if (result.recordset && result.recordset[0].ErrorMessage) {
+      return Response.json({ error: result.recordset[0].ErrorMessage }, { status: 500 });
+    }
+
+    return Response.json({
+      message: "Employee updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating employee:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
 
 export async function POST(req) {
   try {
