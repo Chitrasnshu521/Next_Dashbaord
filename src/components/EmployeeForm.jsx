@@ -1,34 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function EmployeeForm({ selectedEmployee, onSuccess }) {
-  const [formData, setFormData] = useState({ 
-    id: "", 
-    name: "", 
-    mobile: "", 
-    salary: "", 
-    city: "" 
-  });
+export default function EmployeeForm({ onSuccess }) {
+  const [formData, setFormData] = useState({ name: "", mobile: "", salary: "", city: "" });
   const [loading, setLoading] = useState(false);
-
-  // Pre-fill form data when selectedEmployee changes
-  useEffect(() => {
-    if (selectedEmployee) {
-      setFormData({
-        id: selectedEmployee.ID,
-        name: selectedEmployee.Name,
-        mobile: selectedEmployee.Mobile,
-        salary: selectedEmployee.Salary,
-        city: selectedEmployee.City
-      });
-    } else {
-      setFormData({ id: "", name: "", mobile: "", salary: "", city: "" });
-    }
-  }, [selectedEmployee]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,23 +16,25 @@ export default function EmployeeForm({ selectedEmployee, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
-      const url = selectedEmployee ? `/api/users?id=${selectedEmployee.ID}` : "/api/users";
-      const method = selectedEmployee ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method: method,
+      const response = await fetch("/api/users", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          Name: formData.name, // ✅ Match API field names
+          Mobile: formData.mobile,
+          Salary: formData.salary,
+          City: formData.city,
+        }),
       });
-
+  
       const result = await response.json();
-
+  
       if (response.ok) {
         toast.success(result.message);
-        setFormData({ id: "", name: "", mobile: "", salary: "", city: "" });
-        onSuccess(); // Close the dialog and reset state
+        setFormData({ name: "", mobile: "", salary: "", city: "" });
+        onSuccess();
       } else {
         toast.error(result.error || "Something went wrong");
       }
@@ -63,12 +44,10 @@ export default function EmployeeForm({ selectedEmployee, onSuccess }) {
       setLoading(false);
     }
   };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {selectedEmployee && (
-        <Input type="hidden" name="id" value={formData.id} />
-      )}
       <Input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
       <Input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} required />
       <Input type="number" name="salary" placeholder="Salary" value={formData.salary} onChange={handleChange} required />

@@ -20,11 +20,12 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Pencil } from "lucide-react"; // Import the edit icon
+import { Pencil } from "lucide-react";
 import EmployeeDialog from "./EmployeeDialog";
+import EmployeeUpdate from "./Employeeupdate";
 
 export function DataTableDemo() {
-    const [fullData, setFullData] = useState([]); // Store all records
+    const [fullData, setFullData] = useState([]);
     const [filterText, setFilterText] = useState("");
     const [loading, setLoading] = useState(true);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -34,10 +35,9 @@ export function DataTableDemo() {
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/users`)
+        fetch("/api/users")
             .then((response) => response.json())
             .then((json) => {
-               // console.log("Fetched Data:", json); // ✅ Check if ID exists
                 setFullData(json);
                 setLoading(false);
             })
@@ -47,12 +47,8 @@ export function DataTableDemo() {
             });
     }, []);
 
-    // Filtered Data for Searching
     const filteredData = useMemo(() => {
-        if (!Array.isArray(fullData)) {
-            console.warn("fullData is not an array:", fullData);
-            return [];
-        }
+        if (!Array.isArray(fullData)) return [];
         return fullData.filter((item) =>
             Object.values(item).some((value) =>
                 value?.toString().toLowerCase().includes(filterText.toLowerCase())
@@ -60,42 +56,33 @@ export function DataTableDemo() {
         );
     }, [fullData, filterText]);
 
-    // Paginate Data
     const paginatedData = useMemo(() => {
         const start = (page - 1) * pageSize;
         return filteredData.slice(start, start + pageSize);
     }, [filteredData, page, pageSize]);
 
-    const handleEdit = async (employeeId) => {
-        if (!employeeId) {
-          console.error("Error: Missing ID for edit action!");
-          return;
+    const handleEdit = async (id) => {
+        if (!id) {
+            console.error("Error: Missing ID for edit action!");
+            return;
         }
-        setLoading(true);
+    
         try {
-          const response = await fetch(`/api/users?id=${employeeId}`);
-          const data = await response.json();
-          setSelectedEmployee(data); // Store fetched data
-          setIsDialogOpen(true); // Open the dialog
+            const response = await fetch(`/api/users?id=${id}`);
+            if (!response.ok) throw new Error("Employee not found");
+    
+            const data = await response.json();
+            setSelectedEmployee(data); // Set employee data
+            setIsDialogOpen(true); // Open the dialog
         } catch (error) {
-          console.error("Error fetching employee data:", error);
+            console.error("Error fetching employee data:", error);
         }
-        setLoading(false);
-      };
-
+    };
+    
     const table = useReactTable({
         data: paginatedData,
         columns: [
-            {
-                accessorKey: "rowIndex",
-                header: "ID",
-                cell: ({ row }) => row.index + 1, // Static Row ID
-            },
-            // {
-            //     accessorKey: "ID",
-            //     header: "Actual ID",
-            //     cell: ({ row }) => row.original.ID || "N/A", // Ensure ID is displayed
-            // },
+            { accessorKey: "rowIndex", header: "ID", cell: ({ row }) => row.index + 1 },
             { accessorKey: "Name", header: "Name" },
             { accessorKey: "Mobile", header: "Mobile" },
             { accessorKey: "Salary", header: "Salary" },
@@ -104,7 +91,7 @@ export function DataTableDemo() {
                 accessorKey: "Sts",
                 header: "Status",
                 cell: ({ row }) => {
-                    const status = row.original.Sts ? row.original.Sts.toUpperCase() : "I"; // Default to "I"
+                    const status = row.original.Sts?.toUpperCase() || "I";
                     const statusMap = {
                         A: { label: "Active", className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
                         P: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300" },
@@ -120,28 +107,13 @@ export function DataTableDemo() {
                 cell: ({ row }) => {
                     const employeeId = row.original.ID;
                     if (!employeeId) return "N/A";
-            
                     return (
-                        <EmployeeDialog
-  selectedEmployee={selectedEmployee}
-  onSuccess={() => {
-    setSelectedEmployee(null); // Reset selected employee after success
-    setIsDialogOpen(false); // Close the dialog
-    // Optionally, refetch data here to update the table
-  }}
-  isOpen={isDialogOpen}
-  onOpenChange={setIsDialogOpen}
-/>
-                    //     <EmployeeDialog 
-                    //     selectedEmployee={selectedEmployee} 
-                    //     onSuccess={() => {
-                    //       setSelectedEmployee(null);
-                    //       // Optionally, refetch data here if needed
-                    //     }} 
-                    //   />
+                        <Button size="sm" variant="ghost" onClick={() => handleEdit(employeeId)}>
+                            <Pencil className="w-4 h-4" />
+                        </Button>
                     );
                 },
-            }            
+            },
         ],
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -158,7 +130,18 @@ export function DataTableDemo() {
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                 />
-                <EmployeeDialog />
+                <EmployeeDialog
+                    employee={selectedEmployee}
+                    isOpen={isDialogOpen}
+                    setIsOpen={setIsDialogOpen}
+                    setSelectedEmployee={setSelectedEmployee}
+                />
+                <EmployeeUpdate
+                    employee={selectedEmployee}
+                    isOpen={isDialogOpen}
+                    setIsOpen={setIsDialogOpen}
+                    setSelectedEmployee={setSelectedEmployee}
+                />
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -174,33 +157,34 @@ export function DataTableDemo() {
                         ))}
                     </TableHeader>
                     <TableBody>
-                       {loading ? (
-                           [...Array(pageSize)].map((_, index) => (
-                               <TableRow key={index}>
-                                   {table.getAllColumns().map((col) => (
-                                       <TableCell key={col.id}>
-                                           <Skeleton className="w-[50px] h-[20px]" />
-                                       </TableCell>
-                                   ))}
-                               </TableRow>
-                           ))
-                       ) : paginatedData.length > 0 ? (
-                           table.getRowModel().rows.map((row) => (
-                               <TableRow key={row.id}>
-                                   {row.getAllCells().map((cell) => (
-                                       <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                                   ))}
-                               </TableRow>
-                           ))
-                       ) : (
-                    <TableRow>
-            <TableCell colSpan={table.getAllColumns().length} className="text-center">
-                No data found
-            </TableCell>
-        </TableRow>
-    )}
-</TableBody>
-
+                        {loading ? (
+                            [...Array(pageSize)].map((_, index) => (
+                                <TableRow key={index}>
+                                    {table.getAllColumns().map((col) => (
+                                        <TableCell key={col.id}>
+                                            <Skeleton className="w-[50px] h-[20px]" />
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : paginatedData.length > 0 ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {row.getAllCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={table.getAllColumns().length} className="text-center">
+                                    No data found
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
                 </Table>
             </div>
             <div className="flex justify-end space-x-2 py-4">
@@ -211,11 +195,11 @@ export function DataTableDemo() {
                 >
                     Previous
                 </Button>
-                <span className="px-4 py-2">{page} / {Math.ceil(fullData.length / pageSize)}</span>
+                <span className="px-4 py-2">{page} / {Math.ceil(filteredData.length / pageSize)}</span>
                 <Button
                     variant="outline"
-                    onClick={() => setPage((prev) => Math.min(prev + 1, Math.ceil(fullData.length / pageSize)))}
-                    disabled={page * pageSize >= fullData.length}
+                    onClick={() => setPage((prev) => Math.min(prev + 1, Math.ceil(filteredData.length / pageSize)))}
+                    disabled={page * pageSize >= filteredData.length}
                 >
                     Next
                 </Button>
