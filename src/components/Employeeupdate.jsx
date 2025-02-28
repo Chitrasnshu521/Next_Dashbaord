@@ -4,14 +4,16 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import {
     Dialog,
-    DialogContent,
-    DialogHeader,
     DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+    DialogContent,
+    DialogActions,
+    Button
+} from "@mui/material";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
 
 export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelectedEmployee, refreshData }) {
     const [formData, setFormData] = useState({
@@ -20,7 +22,7 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
         Mobile: "",
         Salary: "",
         City: "",
-        Sts: "", // No default value
+        Sts: "",
     });
 
     // Set form data when employee is selected
@@ -32,7 +34,7 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                 Mobile: employee.Mobile || "",
                 Salary: employee.Salary || "",
                 City: employee.City || "",
-                Sts: employee.Sts || "", // No default, just take from API
+                Sts: employee.Sts || "", // Ensure it's a string
             });
         }
     }, [employee]);
@@ -57,7 +59,7 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                     Mobile: formData.Mobile,
                     Salary: formData.Salary,
                     City: formData.City,
-                    Sts: formData.Sts, // Send Sts only if it exists
+                    Sts: formData.Sts,
                 }),
             });
 
@@ -80,12 +82,9 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Edit Employee</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
+        <Dialog open={isOpen} onClose={() => setIsOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogContent dividers>
                 <TextField
                     label="Name"
                     name="Name"
@@ -118,28 +117,26 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                     fullWidth
                     margin="normal"
                 />
-                {formData.Sts && (
-                     <div className="grid grid-cols-4 items-center gap-4">
-                     {/* <Label htmlFor="Sts" className="text-right">Status</Label> */}
-                     <select
-                         id="Sts"
-                         name="Sts"
-                         value={formData.Sts}
-                         onChange={handleChange}
-                         className="col-span-3 p-2 border rounded"
-                     >
-                         <option value="A">Active</option>
-                         <option value="P">Pending</option>
-                         <option value="I">Inactive</option>
-                     </select>
-                 </div>
-                )}
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit}>Update</Button>
-                </DialogFooter>
+
+                {/* ✅ Corrected MUI Select Dropdown */}
+                <TextField
+                        label="Status"
+                        name="Sts"
+                        value={formData.Sts}
+                        onChange={handleChange}
+                        select
+                        fullWidth
+                        margin="normal"
+                    >
+                        <MenuItem value="A">Active</MenuItem>
+                        <MenuItem value="P">Pending</MenuItem>
+                        <MenuItem value="I">Inactive</MenuItem>
+                    </TextField>
             </DialogContent>
+            <DialogActions>
+                <Button variant="outlined" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button variant="contained" onClick={handleSubmit}>Update</Button>
+            </DialogActions>
         </Dialog>
     );
 }

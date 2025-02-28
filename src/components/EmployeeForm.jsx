@@ -11,21 +11,7 @@ export default function EmployeeForm({ selectedEmployee }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ id: "", name: "", mobile: "", salary: "", city: "" });
   const [loading, setLoading] = useState(false);
-
-  // useEffect(() => {
-  //   if (selectedEmployee) {
-  //     setFormData({
-  //       id: selectedEmployee.ID || "",
-  //       name: selectedEmployee.Name || "",
-  //       mobile: selectedEmployee.Mobile || "",
-  //       salary: selectedEmployee.Salary || "",
-  //       city: selectedEmployee.City || ""
-  //     });
-  //   } else {
-  //     setFormData({ id: "", name: "", mobile: "", salary: "", city: "" });
-  //   }
-  // }, [selectedEmployee]);
-
+  
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
