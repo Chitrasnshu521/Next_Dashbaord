@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 import EmployeeDialog from "./EmployeeDialog";
 import EmployeeUpdate from "./Employeeupdate";
+import EmployeeForm from "./EmployeeForm";
 
 export function DataTableDemo() {
     const [fullData, setFullData] = useState([]);
@@ -108,7 +109,7 @@ export function DataTableDemo() {
                     const employeeId = row.original.ID;
                     if (!employeeId) return "N/A";
                     return (
-                        <Button size="sm" variant="ghost" onClick={() => handleEdit(employeeId)}>
+                        <Button size="sm" variant="outline" onClick={() => handleEdit(employeeId)}>
                             <Pencil className="w-4 h-4" />
                         </Button>
                     );
@@ -130,7 +131,7 @@ export function DataTableDemo() {
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
                 />
-                <EmployeeDialog
+                <EmployeeForm
                     employee={selectedEmployee}
                     isOpen={isDialogOpen}
                     setIsOpen={setIsDialogOpen}

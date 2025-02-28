@@ -63,9 +63,9 @@ export async function PUT(req) {
         const body = await req.json();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
-        const { Name, Mobile, Salary, City } = body;
+        const { Name, Mobile, Salary, City, Sts } = body;
 
-        if (!id || !Name || !Mobile || !Salary || !City) {
+        if (!id || !Name || !Mobile || !Salary || !City || !Sts) {
             return Response.json({ error: "Missing required fields" }, { status: 400 });
         }
 
@@ -77,6 +77,7 @@ export async function PUT(req) {
             .input("Mobile", sql.NVarChar, Mobile)
             .input("Salary", sql.NVarChar, Salary)
             .input("City", sql.NVarChar, City)
+            .input("Sts", sql.NVarChar, Sts)
             .execute("AD_spUpdateEmployee"); // Ensure this stored procedure exists
 
         if (result.recordset && result.recordset[0].ErrorMessage) {

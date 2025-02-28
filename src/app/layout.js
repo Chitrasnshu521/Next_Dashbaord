@@ -1,4 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { Geist, Geist_Mono } from "next/font/google";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar";
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+           <AppRouterCacheProvider>
        <SidebarProvider>
       <AppSidebar />
       <main className='w-100'>
@@ -38,9 +40,11 @@ export default function RootLayout({ children }) {
       {/* <div className='cust-main-menu-header'>
       <NavigationMenu />
       </div> */}
+      
         {children}
       </main>
     </SidebarProvider>
+    </AppRouterCacheProvider>
       </body>
     </html>
   );

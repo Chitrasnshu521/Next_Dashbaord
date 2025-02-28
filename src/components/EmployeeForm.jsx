@@ -1,13 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button, CircularProgress } from "@mui/material";
+import TextField from "@mui/material/TextField";
+import { FaPlus } from "react-icons/fa6";
 
-export default function EmployeeForm({ onSuccess }) {
-  const [formData, setFormData] = useState({ name: "", mobile: "", salary: "", city: "" });
+export default function EmployeeForm({ selectedEmployee }) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({ id: "", name: "", mobile: "", salary: "", city: "" });
   const [loading, setLoading] = useState(false);
+
+  // useEffect(() => {
+  //   if (selectedEmployee) {
+  //     setFormData({
+  //       id: selectedEmployee.ID || "",
+  //       name: selectedEmployee.Name || "",
+  //       mobile: selectedEmployee.Mobile || "",
+  //       salary: selectedEmployee.Salary || "",
+  //       city: selectedEmployee.City || ""
+  //     });
+  //   } else {
+  //     setFormData({ id: "", name: "", mobile: "", salary: "", city: "" });
+  //   }
+  // }, [selectedEmployee]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,7 +39,7 @@ export default function EmployeeForm({ onSuccess }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          Name: formData.name, // ✅ Match API field names
+          Name: formData.name,    // Capitalized to match backend expectations
           Mobile: formData.mobile,
           Salary: formData.salary,
           City: formData.city,
@@ -34,7 +51,7 @@ export default function EmployeeForm({ onSuccess }) {
       if (response.ok) {
         toast.success(result.message);
         setFormData({ name: "", mobile: "", salary: "", city: "" });
-        onSuccess();
+        setOpen(false);
       } else {
         toast.error(result.error || "Something went wrong");
       }
@@ -47,14 +64,32 @@ export default function EmployeeForm({ onSuccess }) {
   
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
-      <Input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} required />
-      <Input type="number" name="salary" placeholder="Salary" value={formData.salary} onChange={handleChange} required />
-      <Input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} required />
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Submitting..." : "Submit"}
-      </Button>
-    </form>
+    <div className="flex justify-center">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="contained" color="primary"><FaPlus /> Add Employee</Button>
+        </DialogTrigger>
+
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedEmployee ? "Edit Employee" : "Add New Employee"}</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <TextField label="Full Name" name="name" fullWidth value={formData.name} onChange={handleChange} required />
+            <TextField label="Mobile Number" name="mobile" type="tel" fullWidth value={formData.mobile} onChange={handleChange} required />
+            <TextField label="Salary" name="salary" type="number" fullWidth value={formData.salary} onChange={handleChange} required />
+            <TextField label="City" name="city" fullWidth value={formData.city} onChange={handleChange} required />
+            <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
+              {loading ? <><CircularProgress size={20} /> Submitting...</> : "Submit"}
+            </Button>
+          </form>
+
+          <DialogFooter>
+            <Button variant="outlined" onClick={() => setOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

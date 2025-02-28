@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import {
     Dialog,
     DialogContent,
@@ -8,29 +9,31 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 
-export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelectedEmployee }) {
+export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelectedEmployee, refreshData }) {
     const [formData, setFormData] = useState({
+        ID: "",
         Name: "",
         Mobile: "",
         Salary: "",
         City: "",
+        Sts: "", // No default value
     });
 
+    // Set form data when employee is selected
     useEffect(() => {
         if (employee) {
             setFormData({
-                id: employee.ID  || "",
+                ID: employee.ID || "",
                 Name: employee.Name || "",
                 Mobile: employee.Mobile || "",
                 Salary: employee.Salary || "",
                 City: employee.City || "",
+                Sts: employee.Sts || "", // No default, just take from API
             });
-        } else {
-            setFormData({id: "", Name: "", Mobile: "", Salary: "", City: "" });
         }
     }, [employee]);
 
@@ -41,19 +44,38 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
 
     const handleSubmit = async () => {
         try {
-            const method = employee ? "PUT" : "POST"; // Use PUT for update, POST for create
-            const url = employee ? `/api/users?id=${employee.ID}` : "/api/users";
-            const response = await fetch(url, {
-                method,
+            if (!formData.ID) {
+                toast.error("Employee ID is missing!");
+                return;
+            }
+
+            const response = await fetch(`/api/users?id=${formData.ID}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    Name: formData.Name,
+                    Mobile: formData.Mobile,
+                    Salary: formData.Salary,
+                    City: formData.City,
+                    Sts: formData.Sts, // Send Sts only if it exists
+                }),
             });
-            if (!response.ok) throw new Error("Failed to save employee");
+
+            if (!response.ok) {
+                throw new Error("Failed to update employee");
+            }
+
+            toast.success("Employee updated successfully!");
+
+            // Close the dialog and reset the form
             setIsOpen(false);
             setSelectedEmployee(null);
-            // Optionally refresh the table data here by calling a parent function
+
+            // Refresh the employee list if provided
+            if (refreshData) refreshData();
         } catch (error) {
-            console.error("Error saving employee:", error);
+            console.error("Error updating employee:", error);
+            toast.error("Failed to update employee. Please try again.");
         }
     };
 
@@ -61,60 +83,61 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{employee ? "Edit Employee" : "Add Employee"}</DialogTitle>
+                    <DialogTitle>Edit Employee</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                    <Input
-                            id="Name"
-                            name="Name"
-                            value={formData.id}
-                            onChange={handleChange}
-                            className="col-span-3 hidden"
-                        />
-                        <Label htmlFor="Name" className="text-right">Name</Label>
-                        <Input
-                            id="Name"
-                            name="Name"
-                            value={formData.Name}
-                            onChange={handleChange}
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="Mobile" className="text-right">Mobile</Label>
-                        <Input
-                            id="Mobile"
-                            name="Mobile"
-                            value={formData.Mobile}
-                            onChange={handleChange}
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="Salary" className="text-right">Salary</Label>
-                        <Input
-                            id="Salary"
-                            name="Salary"
-                            value={formData.Salary}
-                            onChange={handleChange}
-                            className="col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="City" className="text-right">City</Label>
-                        <Input
-                            id="City"
-                            name="City"
-                            value={formData.City}
-                            onChange={handleChange}
-                            className="col-span-3"
-                        />
-                    </div>
+                <TextField
+                    label="Name"
+                    name="Name"
+                    value={formData.Name}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="Mobile"
+                    name="Mobile"
+                    value={formData.Mobile}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="Salary"
+                    name="Salary"
+                    value={formData.Salary}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                <TextField
+                    label="City"
+                    name="City"
+                    value={formData.City}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                />
+                {formData.Sts && (
+                     <div className="grid grid-cols-4 items-center gap-4">
+                     {/* <Label htmlFor="Sts" className="text-right">Status</Label> */}
+                     <select
+                         id="Sts"
+                         name="Sts"
+                         value={formData.Sts}
+                         onChange={handleChange}
+                         className="col-span-3 p-2 border rounded"
+                     >
+                         <option value="A">Active</option>
+                         <option value="P">Pending</option>
+                         <option value="I">Inactive</option>
+                     </select>
+                 </div>
+                )}
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit}>Save</Button>
+                    <Button onClick={handleSubmit}>Update</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
