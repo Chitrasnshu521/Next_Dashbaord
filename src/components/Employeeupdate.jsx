@@ -11,9 +11,6 @@ import {
 } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
 
 export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelectedEmployee, refreshData }) {
     const [formData, setFormData] = useState({
@@ -63,18 +60,22 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                 }),
             });
 
-            if (!response.ok) {
+            if (response.ok) {
+                toast.success("Employee updated successfully!");
+
+                // Close the dialog and reset the form
+                setIsOpen(false);
+                setSelectedEmployee(null);
+                refreshData();
+            }
+            else{
                 throw new Error("Failed to update employee");
             }
 
-            toast.success("Employee updated successfully!");
-
-            // Close the dialog and reset the form
-            setIsOpen(false);
-            setSelectedEmployee(null);
+           
 
             // Refresh the employee list if provided
-            if (refreshData) refreshData();
+            //if (refreshData) refreshData();
         } catch (error) {
             console.error("Error updating employee:", error);
             toast.error("Failed to update employee. Please try again.");
@@ -82,7 +83,7 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
     };
 
     return (
-        <Dialog open={isOpen} onClose={() => setIsOpen(false)} fullWidth maxWidth="sm">
+        <Dialog open={isOpen} onClose={() => setIsOpen(false)} fullWidth maxWidth="xs">
             <DialogTitle>Edit Employee</DialogTitle>
             <DialogContent dividers>
                 <TextField
@@ -118,7 +119,6 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                     margin="normal"
                 />
 
-                {/* ✅ Corrected MUI Select Dropdown */}
                 <TextField
                         label="Status"
                         name="Sts"
@@ -134,7 +134,7 @@ export default function EmployeeUpdate({ employee, isOpen, setIsOpen, setSelecte
                     </TextField>
             </DialogContent>
             <DialogActions>
-                <Button variant="outlined" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button variant="outlined" onClick={() => setIsOpen(false)} color="error">Cancel</Button>
                 <Button variant="contained" onClick={handleSubmit}>Update</Button>
             </DialogActions>
         </Dialog>

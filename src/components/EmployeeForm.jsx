@@ -7,7 +7,7 @@ import { Button, CircularProgress } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import { FaPlus } from "react-icons/fa6";
 
-export default function EmployeeForm({ selectedEmployee }) {
+export default function EmployeeForm({ selectedEmployee, refreshData }) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ id: "", name: "", mobile: "", salary: "", city: "" });
   const [loading, setLoading] = useState(false);
@@ -25,19 +25,20 @@ export default function EmployeeForm({ selectedEmployee }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          Name: formData.name,    // Capitalized to match backend expectations
+          Name: formData.name,
           Mobile: formData.mobile,
           Salary: formData.salary,
           City: formData.city,
         }),
       });
-  
+
       const result = await response.json();
   
       if (response.ok) {
         toast.success(result.message);
         setFormData({ name: "", mobile: "", salary: "", city: "" });
         setOpen(false);
+        refreshData(); // Refresh the table after submission
       } else {
         toast.error(result.error || "Something went wrong");
       }
@@ -47,10 +48,9 @@ export default function EmployeeForm({ selectedEmployee }) {
       setLoading(false);
     }
   };
-  
 
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-end w-full">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button variant="contained" color="primary"><FaPlus /> Add Employee</Button>
@@ -66,14 +66,15 @@ export default function EmployeeForm({ selectedEmployee }) {
             <TextField label="Mobile Number" name="mobile" type="tel" fullWidth value={formData.mobile} onChange={handleChange} required />
             <TextField label="Salary" name="salary" type="number" fullWidth value={formData.salary} onChange={handleChange} required />
             <TextField label="City" name="city" fullWidth value={formData.city} onChange={handleChange} required />
-            <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
-              {loading ? <><CircularProgress size={20} /> Submitting...</> : "Submit"}
-            </Button>
+            <div className="d-flex gap-2">
+              <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
+                {loading ? <><CircularProgress size={20} /> Submitting...</> : "Submit"}
+              </Button>
+              <Button variant="outlined" onClick={() => setOpen(false)} color="error">Cancel</Button>
+            </div>
           </form>
 
-          <DialogFooter>
-            <Button variant="outlined" onClick={() => setOpen(false)}>Cancel</Button>
-          </DialogFooter>
+          <DialogFooter></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

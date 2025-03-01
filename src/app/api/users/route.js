@@ -90,3 +90,38 @@ export async function PUT(req) {
         return Response.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+
+
+export async function DELETE(req) {
+    try {
+        const { searchParams } = new URL(req.url);
+        let id = searchParams.get("id");
+
+        if (!id) {
+            return Response.json({ error: "Missing Employee ID" }, { status: 400 });
+        }
+
+        id = parseInt(id); // Ensure ID is an integer
+
+        if (isNaN(id)) {
+            return Response.json({ error: "Invalid Employee ID" }, { status: 400 });
+        }
+
+        const pool = await connectToDatabase();
+
+        // Execute delete stored procedure
+        const result = await pool.request()
+            .input("ID", sql.Int, id)
+            .execute("CkEmpDeleteByID");
+
+        // Check if any rows were affected
+        if (result.rowsAffected[0] === 0) {
+            return Response.json({ error: "Employee not found" }, { status: 404 });
+        }
+
+        return Response.json({ message: "Employee deleted successfully" }, { status: 200 });
+    } catch (error) {
+        console.error("Error deleting employee:", error);
+        return Response.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}

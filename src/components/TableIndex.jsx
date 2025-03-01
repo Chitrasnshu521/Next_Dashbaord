@@ -20,10 +20,11 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Pencil } from "lucide-react";
-import EmployeeDialog from "./EmployeeDialog";
+import { Pencil, Trash2 } from "lucide-react";
 import EmployeeUpdate from "./Employeeupdate";
 import EmployeeForm from "./EmployeeForm";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "react-hot-toast";
 
 export function DataTableDemo() {
     const [fullData, setFullData] = useState([]);
@@ -31,10 +32,12 @@ export function DataTableDemo() {
     const [loading, setLoading] = useState(true);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteEmployeeId, setDeleteEmployeeId] = useState(null);
     const [page, setPage] = useState(1);
     const pageSize = 10;
 
-    useEffect(() => {
+    const fetchData = () => {
         setLoading(true);
         fetch("/api/users")
             .then((response) => response.json())
@@ -46,6 +49,10 @@ export function DataTableDemo() {
                 console.error("Error fetching data:", error);
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
     const filteredData = useMemo(() => {
@@ -67,19 +74,51 @@ export function DataTableDemo() {
             console.error("Error: Missing ID for edit action!");
             return;
         }
-    
+
         try {
             const response = await fetch(`/api/users?id=${id}`);
             if (!response.ok) throw new Error("Employee not found");
-    
+
             const data = await response.json();
-            setSelectedEmployee(data); // Set employee data
-            setIsDialogOpen(true); // Open the dialog
+            setSelectedEmployee(data);
+            setIsDialogOpen(true);
         } catch (error) {
             console.error("Error fetching employee data:", error);
         }
     };
-    
+
+    const handleDeleteConfirm = (id) => {
+        setDeleteEmployeeId(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!deleteEmployeeId) {
+            console.error("Error: Missing ID for delete action!");
+            return;
+        }
+
+        setDeleteDialogOpen(false);
+
+        try {
+            const response = await fetch(`/api/users?id=${deleteEmployeeId}`, {
+                method: "DELETE",
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to delete employee");
+            }
+
+            toast.success("Employee deleted successfully!");
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting employee:", error);
+            toast.error("Error deleting employee: " + error.message);
+        }
+    };
+
     const table = useReactTable({
         data: paginatedData,
         columns: [
@@ -109,9 +148,14 @@ export function DataTableDemo() {
                     const employeeId = row.original.ID;
                     if (!employeeId) return "N/A";
                     return (
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(employeeId)}>
-                            <Pencil className="w-4 h-4" />
-                        </Button>
+                        <div className="d-flex">
+                            <Button className="me-1" size="sm" onClick={() => handleEdit(employeeId)}>
+                                <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteConfirm(employeeId)}>
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        </div>
                     );
                 },
             },
@@ -124,7 +168,7 @@ export function DataTableDemo() {
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4 justify-between">
+            <div className="flex items-center py-4 justify-between w-full">
                 <Input
                     placeholder="Filter data..."
                     className="max-w-sm"
@@ -136,12 +180,15 @@ export function DataTableDemo() {
                     isOpen={isDialogOpen}
                     setIsOpen={setIsDialogOpen}
                     setSelectedEmployee={setSelectedEmployee}
+                    refreshData={fetchData}
+                    className="min-w-3xs"
                 />
                 <EmployeeUpdate
                     employee={selectedEmployee}
                     isOpen={isDialogOpen}
                     setIsOpen={setIsDialogOpen}
                     setSelectedEmployee={setSelectedEmployee}
+                    refreshData={fetchData}
                 />
             </div>
             <div className="rounded-md border">
@@ -205,6 +252,19 @@ export function DataTableDemo() {
                     Next
                 </Button>
             </div>
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                    </DialogHeader>
+                    <p>Are you sure you want to delete this employee?</p>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
